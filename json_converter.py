@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jan 29 22:37:53 2020
-
-@author: ConorG
-"""
 import json
 import sqlite3
 
@@ -63,7 +57,7 @@ def run_sql(active_customers):
     for date, count in active_customers.items():
         current_count_at_date = check_if_row_exists_in_table(date)
         if current_count_at_date:
-            mycur.execute(UPDATE_SQL.format(additional_count=count, current_count=current_count_at_date, current_date=date))
+            continue
         else:
             mycur.execute(INSERT_SQL.format(date=date, count=count))
     mycur.close()
@@ -75,3 +69,4 @@ if __name__ == '__main__':
     create_table_if_not_exists()
     customer_count = get_customer_count()
     run_sql(customer_count)
+    print("Data successfully loaded")
