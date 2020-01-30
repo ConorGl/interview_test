@@ -1,10 +1,15 @@
 import sqlite3
 
+
 def select_sql_lite_table():
-    conn = sqlite3.connect('active_customers.db') 
+    """
+    Selects all rows from table active_customers
+    :return: list
+    """
+    conn = sqlite3.connect('active_customers.db')
     mycur = conn.cursor()
     try:
-        mycur.execute("SELECT * FROM ACTIVE_CUSTOMERS")
+        mycur.execute("SELECT * FROM active_customers")
         rows = mycur.fetchall()
     except:
         rows = None

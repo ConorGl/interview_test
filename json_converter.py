@@ -2,27 +2,36 @@ import json
 import sqlite3
 from datetime import datetime
 
-SELECT_SQL = """SELECT active_user_count FROM ACTIVE_CUSTOMERS
+SELECT_SQL = """SELECT active_user_count FROM active_customers
                 WHERE date = '{date}'"""
-INSERT_SQL = "INSERT INTO ACTIVE_CUSTOMERS VALUES('{date}', '{count}' );"
-UPDATE_SQL = """UPDATE ACTIVE_CUSTOMERS
+INSERT_SQL = "INSERT INTO active_customers VALUES('{date}', '{count}' );"
+UPDATE_SQL = """UPDATE active_customers
                 set active_user_count={additional_count} + {current_count}
                 WHERE date = '{current_date}'"""
 
 
 def create_table_if_not_exists():
+    """
+    Checks if the db / table exists and creates it if not
+    :return:
+    """
     conn = sqlite3.connect('active_customers.db')
     mycur = conn.cursor()
     try:
-        mycur.execute("""SELECT * FROM ACTIVE_CUSTOMERS""")
+        mycur.execute("""SELECT * FROM active_customers""")
     except:
-        mycur.execute("""CREATE TABLE ACTIVE_CUSTOMERS
+        mycur.execute("""CREATE TABLE active_customers
                      ([date] date, [active_user_count] integer)""")
         conn.commit()
     conn.close
 
 
 def check_if_row_exists_in_table(date):
+    """
+    Checks if a row with the current date already exists
+    :param date: date
+    :return: int
+    """
     conn = sqlite3.connect('active_customers.db')
     mycur = conn.cursor()
     try:
@@ -34,13 +43,19 @@ def check_if_row_exists_in_table(date):
 
 
 def get_customer_count():
+    """
+    Finds user_engagement events with a time > 300msec and returns a count
+    per date
+    :return: dict
+    """
     with open('bq-results-sample-data.json') as sample:
         data = [json.loads(line) for line in sample]
     customer_engagement = {}
     for line in data:
         if not line['event_name'] == 'user_engagement':
             continue
-        engagement_event = next((e for e in line['event_params'] if e['key'] == 'engagement_time_msec'), None)
+        engagement_event = next((e for e in line['event_params']
+                                 if e['key'] == 'engagement_time_msec'), None)
         if engagement_event:
             val = int(engagement_event['value'].get('int_value') or 0)
             if val > 3000:
@@ -53,10 +68,15 @@ def get_customer_count():
 
 
 def run_sql(active_customers):
+    """
+    Checks whether row exists in table and inserts a new row if it doesn't
+    :param active_customers: dict
+    :return:
+    """
     conn = sqlite3.connect('active_customers.db')
     mycur = conn.cursor()
     for date, count in active_customers.items():
-        new_date = datetime.strptime(date,'%Y%m%d')
+        new_date = datetime.strptime(date, '%Y%m%d')
         current_count_at_date = check_if_row_exists_in_table(new_date.date())
         if current_count_at_date:
             continue
