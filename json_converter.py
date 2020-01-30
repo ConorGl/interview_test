@@ -1,9 +1,10 @@
 import json
 import sqlite3
+from datetime import datetime
 
 SELECT_SQL = """SELECT active_user_count FROM ACTIVE_CUSTOMERS
                 WHERE date = '{date}'"""
-INSERT_SQL = "INSERT INTO ACTIVE_CUSTOMERS VALUES({date}, '{count}' );"
+INSERT_SQL = "INSERT INTO ACTIVE_CUSTOMERS VALUES('{date}', '{count}' );"
 UPDATE_SQL = """UPDATE ACTIVE_CUSTOMERS
                 set active_user_count={additional_count} + {current_count}
                 WHERE date = '{current_date}'"""
@@ -55,11 +56,13 @@ def run_sql(active_customers):
     conn = sqlite3.connect('active_customers.db')
     mycur = conn.cursor()
     for date, count in active_customers.items():
-        current_count_at_date = check_if_row_exists_in_table(date)
+        new_date = datetime.strptime(date,'%Y%m%d')
+        current_count_at_date = check_if_row_exists_in_table(new_date.date())
         if current_count_at_date:
             continue
         else:
-            mycur.execute(INSERT_SQL.format(date=date, count=count))
+            mycur.execute(INSERT_SQL.format(date=new_date.date(),
+                                            count=count))
     mycur.close()
     conn.commit()
     conn.close()
