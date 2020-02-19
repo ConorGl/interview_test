@@ -23,8 +23,9 @@ def create_table_if_not_exists():
         mycur.execute("""CREATE TABLE active_customers
                      ([date] date, [active_user_count] integer)""")
         conn.commit()
-    conn.close
-
+    finally:
+        conn.close
+    return
 
 def check_if_row_exists_in_table(date):
     """
@@ -49,23 +50,22 @@ def get_customer_count():
     :return: dict
     """
     with open('bq-results-sample-data.json') as sample:
-        data = [json.loads(line) for line in sample]
-    customer_engagement = {}
-    for line in data:
-        if not line['event_name'] == 'user_engagement':
-            continue
-        engagement_event = next((e for e in line['event_params']
-                                 if e['key'] == 'engagement_time_msec'), None)
-        if engagement_event:
-            val = int(engagement_event['value'].get('int_value') or 0)
-            if val > 3000:
-                date = line['event_date']
-                if customer_engagement.get(date):
-                    customer_engagement[date] += 1
-                else:
-                    customer_engagement[date] = 1
+        customer_engagement = {}
+        for line in sample:
+            data = json.loads(line) 
+            if not data['event_name'] == 'user_engagement':
+                continue
+            engagement_event = next((e for e in data['event_params']
+                                     if e['key'] == 'engagement_time_msec'), None)
+            if engagement_event:
+                val = int(engagement_event['value'].get('int_value') or 0)
+                if val > 3000:
+                    date = data['event_date']
+                    if customer_engagement.get(date):
+                        customer_engagement[date] += 1
+                    else:
+                        customer_engagement[date] = 1
     return customer_engagement
-
 
 def run_sql(active_customers):
     """
